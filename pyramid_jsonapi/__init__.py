@@ -628,7 +628,10 @@ class CollectionViewBase:
             data = callback(self, data)
         atts = data.get('attributes', {})
         atts[self.key_column.name] = req_id
-        item = DBSession.merge(self.model(**atts))
+        primary_key = sqlalchemy.inspect(self.model).primary_key[0].name
+        row = self.model(**{primary_key: atts.get(primary_key)})
+        [setattr(row, key, val) for key, val in atts.items() if key != primary_key]
+        item = DBSession.merge(row)
 
         rels = data.get('relationships', {})
         for relname, data in rels.items():
